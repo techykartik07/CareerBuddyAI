@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 
-load_dotenv()  # reads .env file
+# load_dotenv()  # reads .env file
 app = FastAPI(title="CareerBuddy AI", version="1.0")
 
 app.add_middleware(
