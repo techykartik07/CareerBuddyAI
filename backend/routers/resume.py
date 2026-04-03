@@ -58,17 +58,11 @@ async def parse_resume(file: UploadFile = File(...), jd_text: str = ""):
         raise HTTPException(status_code=400, detail="Only PDF files are accepted.")
 
     file_bytes = await file.read()
-    text = extract_text_from_pdf(file_bytes)
-
-    if not text.strip():
-        # Return stub data for scanned/image PDFs so M2/M3 are unblocked
-        return {
-            "text": "Resume text will be here",
-            "contact": {"email": "", "phone": "", "name": ""},
-            "skills": [],
-            "education": [],
-            "experience": [],
-        }
+    try:
+        text = extract_text_from_pdf(file_bytes)
+    except ValueError as e:
+        # Handle scanned/image PDFs gracefully
+        return {"error": "Please upload a text-based PDF", "detail": str(e)}
 
     contact = extract_contact_info(text)
     skills = extract_skills(text)
@@ -89,12 +83,12 @@ async def upload_resume(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail="Only PDF files are accepted.")
 
     file_bytes = await file.read()
-    text = extract_text_from_pdf(file_bytes)
-
-    if not text.strip():
+    try:
+        text = extract_text_from_pdf(file_bytes)
+    except ValueError as e:
         raise HTTPException(
             status_code=422,
-            detail="No text could be extracted. The PDF may be image-based (scanned).",
+            detail="Please upload a text-based PDF",
         )
 
     contact = extract_contact_info(text)
