@@ -1,14 +1,11 @@
 fastapi
 uvicorn[standard]
-<<<<<<< HEAD
 python-multipart
 pdfplumber
 spacy
 python-dotenv
 requests
-=======
 pdfplumber
 spacy
 python-multipart
 python-dotenv
->>>>>>> efe9ae06548710e8031de1c7c1694ff736e8dbde
