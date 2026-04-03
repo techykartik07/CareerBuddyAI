@@ -1,7 +1,16 @@
+<<<<<<< HEAD
+=======
+
+# Environment files
+.env
+*.env
+
+>>>>>>> efe9ae06548710e8031de1c7c1694ff736e8dbde
 # Python
 __pycache__/
 *.pyc
 venv/
+<<<<<<< HEAD
 .env
 *.egg-info/
 
@@ -17,3 +26,33 @@ dist/
 *.pt
 *.bin
 models/
+=======
+.venv/
+*.egg-info/
+# Environment variables — NEVER commit these
+.env
+.env.*
+!.env.example
+
+# Python virtual environment
+backend/.venv/
+.venv/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Hugging Face model cache
+.cache/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+>>>>>>> efe9ae06548710e8031de1c7c1694ff736e8dbde

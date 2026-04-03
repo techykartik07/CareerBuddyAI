@@ -14,7 +14,11 @@
 - Resume–job mismatch leads to low employability and high rejection rates
 - No personalised guidance based on individual skills and interests
 
+<<<<<<< HEAD
 ---
+=======
+--- 
+>>>>>>> efe9ae06548710e8031de1c7c1694ff736e8dbde
 
 ## 💡 Proposed Solution
 
