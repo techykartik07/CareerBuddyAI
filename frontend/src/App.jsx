@@ -230,9 +230,7 @@ export default function App() {
       <section className="hero">
         <div className="hero-badge">✨ AI-Powered Career Analysis</div>
         <h1 className="hero-title">
-          Land Your <span>Dream Job</span>
-          <br />
-          Smarter & Faster
+          Land Your <span>Dream Job</span> Smarter & Faster
         </h1>
         <p className="hero-subtitle">
           Upload your resume, paste a job description, and get instant ATS scoring,
@@ -553,10 +551,7 @@ export default function App() {
       </main>
 
       <footer className="footer">
-        CareerBuddy AI &nbsp;·&nbsp; Backend at{" "}
-        <a href="https://careerbuddyai-wof2.onrender.com/docs" target="_blank" rel="noreferrer">
-          careerbuddyai-wof2.onrender.com/docs
-        </a>
+        CareerBuddy AI &nbsp;·&nbsp; QUANT 4 &nbsp;·&nbsp; Hacksagon 2026
       </footer>
     </div>
   );
