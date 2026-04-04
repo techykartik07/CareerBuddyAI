@@ -1,7 +1,7 @@
 import axios from 'axios'
-
+const BASE_URL = import.meta.env.VITE_API_URL;
 // Switch this to Render URL when Ajay deploys:
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const API_BASE = import.meta.env.VITE_API_URL || 'BASE_URL'
 
 export const analyzeResume = async (pdfFile, jdText) => {
   const form = new FormData()
