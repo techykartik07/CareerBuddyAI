@@ -19,10 +19,9 @@ node_modules/
 dist/
 
 # Models and large files
-*.pkl
 *.pt
 *.bin
-backend/models/
+# backend/models/ — committed so Render has the trained classifier
 backend/data/
 
 # Hugging Face cache

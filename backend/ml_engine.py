@@ -243,6 +243,64 @@ _classifier = None
 _tfidf      = None
 _categories = None
 
+# ── Inline training data (mirrors generate_training_data.py) ──────────────
+import random as _random, csv as _csv
+_CATEGORIES = {
+    "Data Science": "machine learning deep learning python pandas numpy scikit-learn tensorflow keras pytorch data analysis statistics regression classification clustering neural networks nlp jupyter notebook matplotlib seaborn feature engineering model evaluation random forest gradient boosting xgboost cross-validation hyperparameter tuning data pipeline etl big data spark hadoop sql tableau power bi r programming statistical modeling natural language processing text mining computer vision transformers bert time series forecasting",
+    "Software Engineering": "java python c++ software development object-oriented programming design patterns algorithms data structures system design microservices rest api spring boot hibernate unit testing integration testing ci/cd jenkins git github agile scrum jira software architecture distributed systems multithreading concurrency code review sdlc version control debugging solid principles clean code refactoring performance optimization kafka message queues event-driven grpc",
+    "Web Development": "html css javascript typescript react angular vue node express frontend backend full stack web application responsive design bootstrap tailwind rest api graphql webpack babel npm yarn redux react hooks next.js gatsby spa progressive web app sass scss styled-components jest cypress websockets authentication oauth jwt",
+    "Android Development": "android kotlin java android studio xml firebase google play sdk mvvm viewmodel livedata databinding room retrofit material design fragments activities intents broadcast receivers services workmanager coroutines flow jetpack compose push notifications firebase cloud messaging google maps espresso mockito gradle",
+    "iOS Development": "swift objective-c xcode ios iphone ipad app store apple uikit swiftui auto layout core data alamofire cocoapods spm mvvm combine reactive push notifications apns core location mapkit arkit metal core animation in-app purchase xctest instruments performance",
+    "DevOps": "docker kubernetes jenkins ci/cd pipeline infrastructure as code terraform ansible aws azure gcp cloud linux bash shell scripting monitoring prometheus grafana elk sre nginx load balancing istio helm git branching deployment blue green canary security hardening",
+    "Cloud Computing": "aws amazon ec2 s3 rds lambda cloudformation vpc azure blob storage cosmos db app service gcp bigquery cloud run cloud functions serverless containers microservices kubernetes cloud security iam compliance cloud migration cost optimisation",
+    "Cybersecurity": "network security penetration testing ethical hacking vulnerability assessment firewall ids ips siem threat intelligence incident response cryptography ssl tls encryption owasp xss csrf kali nmap metasploit burp wireshark iso27001 nist gdpr soc malware reverse engineering zero trust",
+    "Database Administration": "mysql postgresql oracle sql server mongodb redis elasticsearch database design normalization indexing query optimization backup recovery replication stored procedures triggers transactions acid nosql performance tuning data warehousing etl data lake olap oltp",
+    "Machine Learning Engineer": "mlops model deployment tensorflow serving torchserve feature engineering pipeline automation docker kubernetes model monitoring drift detection scikit-learn pytorch xgboost a/b testing precision recall f1 auc roc dvc mlflow distributed training gpu cuda nlp transformers bert gpt fine-tuning embeddings",
+    "Artificial Intelligence": "artificial intelligence neural networks deep learning computer vision natural language processing generative ai llm large language models reinforcement learning object detection yolo image segmentation speech recognition sentiment analysis gpt openai prompt engineering rag diffusion stable diffusion ai ethics",
+    "Business Analyst": "business analysis requirements gathering stakeholder management use cases user stories backlog uml flowcharts process mapping bpmn excel pivot tables power bi tableau sql data extraction agile scrum product owner gap analysis cost benefit roi",
+    "Project Manager": "project management pmp agile waterfall project planning gantt chart risk management stakeholder communication budget cost control resource allocation jira confluence trello team leadership vendor management procurement",
+    "Digital Marketing": "seo sem google analytics google ads facebook ads content marketing email marketing social media hubspot salesforce crm ppc keyword research backlink instagram linkedin youtube brand awareness lead generation campaign management",
+    "HR": "human resources recruitment talent acquisition onboarding performance management employee engagement hris payroll compensation training lms labor law succession planning diversity inclusion employee relations",
+    "Finance": "financial analysis financial modeling excel valuation balance sheet income statement cash flow dcf investment banking mergers acquisitions portfolio management accounting ifrs gaap auditing tax bloomberg budgeting forecasting",
+    "Graphic Design": "adobe photoshop illustrator indesign after effects ui ux design wireframing prototyping figma sketch branding logo typography color motion graphics animation print design responsive grid usability",
+    "Sales": "sales business development account management b2b b2c lead generation cold calling crm salesforce hubspot negotiation revenue quota upselling cross-selling market penetration pitch deck",
+    "Network Engineer": "cisco networking routers switches vlans tcp/ip dns dhcp bgp ospf firewall vpn network monitoring snmp wireshark ccna ccnp network design troubleshooting bandwidth",
+    "Embedded Systems": "c c++ embedded microcontroller arduino raspberry pi stm32 rtos freertos uart spi i2c pcb design firmware bootloader interrupt adc gpio iot mqtt wifi bluetooth low power",
+    "Testing / QA": "software testing quality assurance manual automated selenium cypress playwright jmeter performance api postman regression smoke agile bdd tdd cucumber appium database sql",
+    "Blockchain": "blockchain solidity ethereum smart contracts web3 ethers defi nft erc-20 consensus cryptography hyperledger dao tokenomics dapp audit security reentrancy",
+    "Data Analyst": "sql excel power bi tableau data visualization cleaning wrangling pivot python pandas matplotlib statistical analysis dashboard kpi google analytics etl a/b testing hypothesis presentation",
+    "Mechanical Engineer": "autocad solidworks catia ansys finite element mechanical design manufacturing thermodynamics fluid mechanics materials science cnc lathes milling product design prototyping six sigma lean quality gdt welding",
+    "Civil Engineering": "autocad staad etabs revit bim structural analysis concrete steel foundation geotechnical construction quantity estimation roads highways bridges environmental surveying quality control",
+}
+
+def _build_and_train():
+    """Generate synthetic data and train classifier in-memory (no disk I/O)."""
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    from sklearn.linear_model import LogisticRegression
+    _random.seed(42)
+
+    texts, labels = [], []
+    for category, blob in _CATEGORIES.items():
+        words = blob.split()
+        for _ in range(80):
+            _random.shuffle(words)
+            sample = " ".join(words[:_random.randint(60, 100)])
+            sample += f" Experienced {category} professional with strong technical background."
+            texts.append(sample)
+            labels.append(category)
+
+    combined = list(zip(texts, labels))
+    _random.shuffle(combined)
+    texts, labels = zip(*combined)
+
+    vec = TfidfVectorizer(max_features=3000, stop_words="english",
+                          ngram_range=(1, 2), sublinear_tf=True)
+    X = vec.fit_transform(texts)
+
+    clf = LogisticRegression(max_iter=1000, C=5.0, solver="lbfgs")
+    clf.fit(X, labels)
+    return clf, vec, clf.classes_.tolist()
+
 def _load_classifier():
     global _classifier, _tfidf, _categories
     if _classifier is not None:
@@ -251,11 +309,13 @@ def _load_classifier():
     clf_path   = os.path.join(models_dir, "job_classifier.pkl")
     vec_path   = os.path.join(models_dir, "tfidf_vectorizer.pkl")
     cat_path   = os.path.join(models_dir, "categories.pkl")
-    if not os.path.exists(clf_path):
-        raise FileNotFoundError("Run train_classifier.py first.")
-    with open(clf_path, "rb") as f: _classifier = pickle.load(f)
-    with open(vec_path, "rb") as f: _tfidf      = pickle.load(f)
-    with open(cat_path, "rb") as f: _categories = pickle.load(f)
+    if os.path.exists(clf_path):
+        with open(clf_path, "rb") as f: _classifier = pickle.load(f)
+        with open(vec_path, "rb") as f: _tfidf      = pickle.load(f)
+        with open(cat_path, "rb") as f: _categories = pickle.load(f)
+    else:
+        # pkl files not on disk — train in-memory (happens on first cold deploy)
+        _classifier, _tfidf, _categories = _build_and_train()
 
 def predict_job_role(resume_text: str) -> dict:
     if not resume_text or not resume_text.strip():
