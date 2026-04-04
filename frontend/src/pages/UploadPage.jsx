@@ -1,5 +1,4 @@
 // src/pages/UploadPage.jsx
-const BASE_URL = import.meta.env.VITE_API_URL;
 import { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { useNavigate } from 'react-router-dom';
@@ -44,7 +43,7 @@ export default function UploadPage() {
       formData.append('file', file);
       formData.append('jd_text', jobDescription);
 
-      const API_URL = import.meta.env.VITE_API_URL || 'BASE_URL';
+      const API_URL = import.meta.env.VITE_API_URL || 'https://careerbuddyai-wof2.onrender.com';
       
       const response = await axios.post(`${API_URL}/resume/analyze`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
