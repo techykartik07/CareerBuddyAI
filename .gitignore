@@ -1,59 +1,37 @@
-<<<<<<< HEAD
-=======
-
-# Environment files
-.env
-*.env
-
->>>>>>> efe9ae06548710e8031de1c7c1694ff736e8dbde
 # Python
 __pycache__/
 *.pyc
+*.pyo
+*.egg-info/
 venv/
 .venv/
+env/
+
+# Environment variables — NEVER commit
 .env
-node_modules/
-*.pkl
+.env.*
+.env.local
+.env.production
+!.env.example
 
 # Node
 node_modules/
 dist/
-.env
-.env.local
-.env.production
 
-# Models (too large for git)
+# Models and large files
 *.pkl
 *.pt
 *.bin
-models/
-=======
-.venv/
-*.egg-info/
-# Environment variables — NEVER commit these
-.env
-.env.*
-!.env.example
+backend/models/
+backend/data/
 
-# Python virtual environment
-backend/.venv/
-.venv/
-venv/
-env/
-
-# Python cache
-__pycache__/
-*.py[cod]
-*.pyo
-
-# Hugging Face model cache
+# Hugging Face cache
 .cache/
 
-# OS files
+# OS
 .DS_Store
 Thumbs.db
 
 # IDE
 .vscode/
 .idea/
->>>>>>> efe9ae06548710e8031de1c7c1694ff736e8dbde

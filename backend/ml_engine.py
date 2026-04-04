@@ -1,89 +1,230 @@
-import os
+from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.feature_extraction.text import TfidfVectorizer
+from groq import Groq
+import os, numpy as np, pickle
 from dotenv import load_dotenv
-from skills_list import extract_skills
 
 load_dotenv()
 
-# Example mock loading for phase 3, we enclose them in try-except so it doesn't crash phase 2
-try:
-    from sentence_transformers import SentenceTransformer
-    model = SentenceTransformer('all-MiniLM-L6-v2')
-except Exception:
-    model = None
+model  = SentenceTransformer('all-MiniLM-L6-v2')
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-try:
-    from groq import Groq
-    groq_api_key = os.getenv("GROQ_API_KEY", "")
-    if groq_api_key:
-        client = Groq(api_key=groq_api_key)
-    else:
-        client = None
-except Exception:
-    client = None
+# ── SKILL VOCABULARY ──────────────────────────────────────
+TECH_SKILLS = [
+    "python","java","javascript","typescript","c++","c","go","rust",
+    "kotlin","swift","r","scala","sql","html","css","php","ruby",
+    "machine learning","deep learning","tensorflow","pytorch","keras",
+    "scikit-learn","nlp","computer vision","transformers","bert",
+    "pandas","numpy","matplotlib","data analysis","data science",
+    "power bi","tableau","excel","spark","hadoop","hive",
+    "fastapi","django","flask","node.js","react","vue","angular",
+    "rest api","graphql","docker","kubernetes","aws","azure","gcp",
+    "git","github","linux","bash","postman","jira","agile","scrum",
+    "mongodb","postgresql","mysql","redis","elasticsearch",
+    "blockchain","solidity","devops","ci/cd","jenkins",
+]
 
-def calculate_ats_score(resume_text: str, jd_text: str):
-    resume_skills = set(extract_skills(resume_text))
-    jd_skills = set(extract_skills(jd_text))
-    
-    if not jd_skills:
-        return {"ats_score": 100, "matched_keywords": list(resume_skills), "missing_keywords": []}
-        
-    matched = resume_skills.intersection(jd_skills)
-    missing = jd_skills.difference(resume_skills)
-    
-    score = int((len(matched) / len(jd_skills)) * 100)
-    
-    word_count = len(resume_text.split())
-    if word_count < 100:
-        score = max(0, score - 20)
-        
-    return {
-        "ats_score": score,
-        "matched_keywords": list(matched),
-        "missing_keywords": list(missing)
-    }
+SKILL_ALIASES = {
+    "ml":"machine learning","ai":"artificial intelligence",
+    "js":"javascript","ts":"typescript","ds":"data science",
+    "dl":"deep learning","k8s":"kubernetes","tf":"tensorflow",
+}
 
-def calculate_job_match(resume_text: str, jd_text: str):
-    resume_skills = set(extract_skills(resume_text))
-    jd_skills = set(extract_skills(jd_text))
-    
-    if not jd_skills:
-        return {"match_percentage": 100.0, "verdict": "Perfect Match (No requirements provided)"}
-        
-    matched = resume_skills.intersection(jd_skills)
-    percent = (len(matched) / len(jd_skills)) * 100.0
-    
-    if percent >= 80:
-        verdict = "Strong Match"
-    elif percent >= 50:
-        verdict = "Moderate Match - improve resume"
-    else:
-        verdict = "Weak Match - significant upskilling required"
-        
-    return {"match_percentage": round(percent, 1), "verdict": verdict}
+# ── 1. ATS SCORE ──────────────────────────────────────────
+def calculate_ats_score(resume_text: str, jd_text: str) -> dict:
+    try:
+        if not resume_text.strip() or not jd_text.strip():
+            return {"ats_score": 0, "matched_keywords": [],
+                    "missing_keywords": [], "total_keywords_checked": 0}
 
-def get_skill_gap(resume_skills: list, jd_skills: list):
-    res_set = set(resume_skills)
-    jd_set = set(jd_skills)
-    return {
-        "missing_skills": list(jd_set.difference(res_set)),
-        "present_skills": list(res_set.intersection(jd_set))
-    }
+        vectorizer = TfidfVectorizer(
+            stop_words="english", max_features=30, ngram_range=(1,2)
+        )
+        vectorizer.fit([jd_text])
+        jd_keywords = vectorizer.get_feature_names_out().tolist()
 
-def generate_roadmap(resume_text: str, jd_text: str, missing_skills: list):
-    if not missing_skills:
-        return "Your profile is an excellent match! No specific upskilling required for this role. Prepare for behavioral interviews."
-        
-    roadmap = "🚀 Suggested Action Plan:\n\n"
-    for i, skill in enumerate(missing_skills[:4]):
-        roadmap += f"Week {i+1}: Master {skill.title()} fundamentals.\n"
-        roadmap += f"  - Complete an introductory crash course on {skill.title()}.\n"
-        roadmap += f"  - Build a small personal project utilizing {skill.title()}.\n\n"
-        
-    if len(missing_skills) > 4:
-        roadmap += f"Future Goals: Consider looking into {', '.join(missing_skills[4:])}.\n"
-        
-    return roadmap.strip()
+        resume_lower = resume_text.lower()
+        matched = [k for k in jd_keywords if k in resume_lower]
+        missing = [k for k in jd_keywords if k not in resume_lower]
+        ats_score = int(len(matched) / len(jd_keywords) * 100) if jd_keywords else 0
 
-def chat_with_assistant(message: str, context: dict):
-    return "I am CareerBuddyAI, your offline assistant. To enable fully dynamic conversational AI, please configure an LLM provider key in your backend .env file."
+        return {
+            "ats_score":              ats_score,
+            "matched_keywords":       matched,
+            "missing_keywords":       missing[:10],
+            "total_keywords_checked": len(jd_keywords)
+        }
+    except Exception as e:
+        return {"ats_score": 0, "matched_keywords": [],
+                "missing_keywords": [], "error": str(e)}
+
+# ── 2. JOB MATCH % ────────────────────────────────────────
+def calculate_job_match(resume_text: str, jd_text: str) -> dict:
+    try:
+        if not resume_text.strip() or not jd_text.strip():
+            return {"match_percentage": 0.0, "verdict": "Insufficient text"}
+
+        embeddings  = model.encode([resume_text, jd_text])
+        similarity  = cosine_similarity([embeddings[0]], [embeddings[1]])[0][0]
+        match_pct   = round(float(similarity) * 100, 1)
+
+        if match_pct >= 75:
+            verdict = "Strong match"
+        elif match_pct >= 50:
+            verdict = "Moderate match — improve your resume"
+        else:
+            verdict = "Weak match — consider a different role"
+
+        return {"match_percentage": match_pct, "verdict": verdict}
+    except Exception as e:
+        return {"match_percentage": 0.0, "verdict": "Error", "error": str(e)}
+
+# ── 3. SKILL GAP ──────────────────────────────────────────
+def normalize_skill(skill: str) -> str:
+    s = skill.lower().strip()
+    return SKILL_ALIASES.get(s, s)
+
+def get_skill_gap(resume_skills: list, jd_skills: list) -> dict:
+    try:
+        resume_norm = set(normalize_skill(s) for s in resume_skills)
+        jd_norm     = set(normalize_skill(s) for s in jd_skills)
+
+        present = sorted(resume_norm & jd_norm)
+        missing = sorted(jd_norm - resume_norm)
+        bonus   = sorted(resume_norm - jd_norm)
+
+        return {
+            "present_skills": present,
+            "missing_skills": missing,
+            "bonus_skills":   bonus,
+            "gap_count":      len(missing)
+        }
+    except Exception as e:
+        return {"present_skills": [], "missing_skills": [],
+                "bonus_skills": [], "gap_count": 0, "error": str(e)}
+
+# ── 4. CAREER ROADMAP via GROQ ────────────────────────────
+def generate_roadmap(resume_text: str, jd_text: str, skill_gap: list) -> str:
+    try:
+        missing_str = ", ".join(skill_gap) if skill_gap else "None identified"
+
+        response = client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[
+                {
+                    "role": "system",
+                    "content": f"""You are an expert career coach.
+Here is the candidate's resume:
+---
+{resume_text[:2000]}
+---
+Target job description:
+---
+{jd_text[:1000]}
+---
+Skills they are missing: {missing_str}
+
+Generate a personalised 4-week career roadmap.
+For each week specify:
+- What to learn (specific skill/topic)
+- One free resource (course or website name)
+- One mini project to build
+Keep it concise, practical and encouraging.
+Maximum 300 words."""
+                },
+                {
+                    "role": "user",
+                    "content": "Generate my personalised 4-week career roadmap."
+                }
+            ],
+            max_tokens=500,
+            temperature=0.7,
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"Roadmap generation failed: {str(e)}"
+
+# ── 5. AI CHATBOT via GROQ ────────────────────────────────
+def chat_with_assistant(user_message: str, context: dict) -> str:
+    try:
+        resume_text    = context.get("resume_text", "Not provided")
+        jd_text        = context.get("jd_text", "Not provided")
+        ats_score      = context.get("ats_score", "Not calculated")
+        match_pct      = context.get("match_percentage", "Not calculated")
+        missing_skills = context.get("missing_skills", [])
+
+        response = client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[
+                {
+                    "role": "system",
+                    "content": f"""You are CareerBuddy AI, a friendly career assistant.
+You have full context about this user:
+Resume: {resume_text[:800]}
+Target job: {jd_text[:500]}
+ATS score: {ats_score}%
+Job match: {match_pct}%
+Missing skills: {', '.join(missing_skills) if missing_skills else 'None'}
+
+Answer their career questions using this context.
+Be specific, practical and encouraging.
+Maximum 3 sentences unless more detail is requested."""
+                },
+                {
+                    "role": "user",
+                    "content": user_message
+                }
+            ],
+            max_tokens=300,
+            temperature=0.7,
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"Assistant error: {str(e)}"
+
+# ── 6. JOB ROLE CLASSIFIER ────────────────────────────────
+_classifier = None
+_tfidf      = None
+_categories = None
+
+def _load_classifier():
+    global _classifier, _tfidf, _categories
+    if _classifier is not None:
+        return
+    models_dir = os.path.join(os.path.dirname(__file__), "models")
+    clf_path   = os.path.join(models_dir, "job_classifier.pkl")
+    vec_path   = os.path.join(models_dir, "tfidf_vectorizer.pkl")
+    cat_path   = os.path.join(models_dir, "categories.pkl")
+    if not os.path.exists(clf_path):
+        raise FileNotFoundError("Run train_classifier.py first.")
+    with open(clf_path, "rb") as f: _classifier = pickle.load(f)
+    with open(vec_path, "rb") as f: _tfidf      = pickle.load(f)
+    with open(cat_path, "rb") as f: _categories = pickle.load(f)
+
+def predict_job_role(resume_text: str) -> dict:
+    if not resume_text or not resume_text.strip():
+        return {"predicted_role": "Unknown", "confidence": 0.0,
+                "top_3_matches": [], "total_categories": 0,
+                "error": "Empty resume text"}
+    try:
+        _load_classifier()
+        vec            = _tfidf.transform([resume_text])
+        predicted_role = _classifier.predict(vec)[0]
+        probs          = _classifier.predict_proba(vec)[0]
+        all_scores     = sorted(zip(_classifier.classes_, probs),
+                                key=lambda x: x[1], reverse=True)
+        top_3 = [{"role": r, "confidence": round(float(p)*100, 1)}
+                 for r, p in all_scores[:3]]
+        return {
+            "predicted_role":   predicted_role,
+            "confidence":       top_3[0]["confidence"],
+            "top_3_matches":    top_3,
+            "total_categories": len(_classifier.classes_)
+        }
+    except FileNotFoundError as e:
+        return {"predicted_role": "Model not trained", "confidence": 0.0,
+                "top_3_matches": [], "error": str(e)}
+    except Exception as e:
+        return {"predicted_role": "Error", "confidence": 0.0,
+                "top_3_matches": [], "error": str(e)}
