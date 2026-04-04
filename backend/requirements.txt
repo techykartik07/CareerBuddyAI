@@ -4,3 +4,11 @@ pdfplumber
 spacy
 python-multipart
 python-dotenv
+sentence-transformers
+scikit-learn
+numpy
+openai
+langchain
+langchain-groq
+langchain-openai
+langchain-community

@@ -35,3 +35,7 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+# Backend Data and Models
+backend/data/
+backend/models/

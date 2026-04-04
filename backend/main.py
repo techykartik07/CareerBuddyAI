@@ -17,7 +17,7 @@ def health():
     return {"status": "ok", "service": "CareerBuddy AI Backend"}
 
 # Routers registered here after M2 creates his files:
-# from routers.resume import router as resume_router
-# from routers.ai     import router as ai_router
-# app.include_router(resume_router)
-# app.include_router(ai_router)
+from routers.resume import router as resume_router
+from routers.ai     import router as ai_router
+app.include_router(resume_router)
+app.include_router(ai_router)
