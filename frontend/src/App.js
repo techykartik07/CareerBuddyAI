@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import "./App.css";
 
-const API = process.env.REACT_APP_API_URL || "https://careerbuddyai-wof2.onrender.com";
+const API = import.meta.env.VITE_API_URL || "https://careerbuddyai-wof2.onrender.com";
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 function scoreColor(n) {
