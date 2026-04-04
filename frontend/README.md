@@ -9,7 +9,8 @@ Currently, two official plugins are available:
 
 ## React Compiler
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Runs the app in the development mode.\
+Open [https://career-buddy-ai-kappa.vercel.app](https://career-buddy-ai-kappa.vercel.app) to view it in your browser.
 
 ## Expanding the ESLint configuration
 
