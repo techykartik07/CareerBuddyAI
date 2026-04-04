@@ -30,7 +30,8 @@ def skill_gap(req: AnalyzeRequest):
 @router.post("/roadmap")
 def roadmap(req: AnalyzeRequest):
     gap = get_skill_gap(req.resume_skills, req.jd_skills)
-    text = generate_roadmap(req.resume_text, req.jd_text, gap["missing_skills"])
+
+    text = generate_roadmap(req.resume_text, req.jd_text, gap.get("missing_skills", []))
     return {"roadmap": text}
 
 @router.post("/chat")

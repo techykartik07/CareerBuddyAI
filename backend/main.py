@@ -12,12 +12,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+def root():
+    return {"status": "CareerBuddyAI backend is running 🚀"}
+
+
 @app.get("/health")
-def health():
+def health_check():
+    """Global health check for the backend."""
     return {"status": "ok", "service": "CareerBuddy AI Backend"}
 
-# Routers registered here after M2 creates his files:
-# from routers.resume import router as resume_router
-# from routers.ai     import router as ai_router
-# app.include_router(resume_router)
-# app.include_router(ai_router)
+from routers.resume import router as resume_router
+from routers.ai     import router as ai_router
+
+app.include_router(resume_router)
+app.include_router(ai_router)
