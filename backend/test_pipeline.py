@@ -6,7 +6,7 @@ pdf_path = os.path.join(current_dir, "sample_resume.pdf")
 
 with open(pdf_path, "rb") as f:
     resp = requests.post(
-        "http://localhost:8000/resume/analyze",
+        "https://careerbuddyai-backend-kartik.onrender.com/resume/analyze",
         files={"file": ("resume.pdf", f, "application/pdf")},
         data={"jd_text": "Python developer with ML experience, FastAPI, Docker"}
     )

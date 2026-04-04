@@ -1,6 +1,6 @@
 import requests
 
-BASE = "http://localhost:8000"
+BASE = "https://careerbuddyai-backend-kartik.onrender.com"
 
 bad_resume = "I am a student looking for work. I know some coding."
 
