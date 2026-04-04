@@ -187,8 +187,8 @@ echo "ANTHROPIC_API_KEY=sk-ant-xxxxxxxxxxxxxxxxxxxx" > .env
 uvicorn main:app --reload --port 8000
 ```
 
-Backend will be live at `http://localhost:8000`  
-Interactive API docs at `http://localhost:8000/docs`
+Backend will be live at `https://careerbuddyai-backend-kartik.onrender.com`  
+Interactive API docs at `https://careerbuddyai-backend-kartik.onrender.com/docs`
 
 ### Frontend Setup
 
@@ -199,7 +199,7 @@ cd careerbuddy-ai/frontend
 npm install
 
 # Create .env file
-echo "VITE_API_URL=http://localhost:8000" > .env
+echo "VITE_API_URL=https://careerbuddyai-backend-kartik.onrender.com" > .env
 
 # Start dev server
 npm run dev

@@ -1,3 +1,11 @@
 fastapi
-uvicorn
-
+uvicorn[standard]
+python-multipart
+pdfplumber
+spacy
+python-dotenv
+requests
+pandas
+scikit-learn
+anthropic
+sentence-transformers
