@@ -1,4 +1,5 @@
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.feature_extraction.text import TfidfVectorizer
 from groq import Groq
 import os, re as _re, json as _json, numpy as np, pickle
 from dotenv import load_dotenv
