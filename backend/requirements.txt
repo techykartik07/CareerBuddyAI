@@ -1,6 +1,3 @@
 fastapi
-uvicorn[standard]
-pdfplumber
-spacy
-python-multipart
-python-dotenv
+uvicorn
+

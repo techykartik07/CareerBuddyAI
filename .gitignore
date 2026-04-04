@@ -1,12 +1,33 @@
+<<<<<<< HEAD
+=======
 
 # Environment files
 .env
 *.env
 
+>>>>>>> efe9ae06548710e8031de1c7c1694ff736e8dbde
 # Python
 __pycache__/
 *.pyc
 venv/
+.venv/
+.env
+node_modules/
+*.pkl
+
+# Node
+node_modules/
+dist/
+.env
+.env.local
+.env.production
+
+# Models (too large for git)
+*.pkl
+*.pt
+*.bin
+models/
+=======
 .venv/
 *.egg-info/
 # Environment variables — NEVER commit these
@@ -35,3 +56,4 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+>>>>>>> efe9ae06548710e8031de1c7c1694ff736e8dbde

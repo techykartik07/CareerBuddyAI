@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
-from ml_engine import (calculate_ats_score, calculate_job_match,
-                       get_skill_gap, generate_roadmap, chat_with_assistant)
+from backend.ml_engine import (calculate_ats_score, calculate_job_match,
+                        get_skill_gap, generate_roadmap, chat_with_assistant)
 
 router = APIRouter(prefix="/ai", tags=["AI/ML"])
 
@@ -30,6 +30,7 @@ def skill_gap(req: AnalyzeRequest):
 @router.post("/roadmap")
 def roadmap(req: AnalyzeRequest):
     gap = get_skill_gap(req.resume_skills, req.jd_skills)
+
     text = generate_roadmap(req.resume_text, req.jd_text, gap.get("missing_skills", []))
     return {"roadmap": text}
 
