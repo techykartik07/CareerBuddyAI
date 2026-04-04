@@ -1,9 +1,9 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
-from backend.ml_engine import (calculate_ats_score, calculate_job_match,
+from ml_engine import (calculate_ats_score, calculate_job_match,
                         get_skill_gap, generate_roadmap, chat_with_assistant,
                         predict_job_role)
-from backend.parsers.contact_parser import extract_contact_info
+from parsers.contact_parser import extract_contact_info
 
 router = APIRouter(prefix="/ai", tags=["AI/ML"])
 

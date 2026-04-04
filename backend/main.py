@@ -16,3 +16,6 @@ app.add_middleware(
 @app.get("/health")
 def health():
     return {"status": "ok", "service": "CareerBuddy AI Backend"}
+
+from routers.ai import router as ai_router
+app.include_router(ai_router)    
