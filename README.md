@@ -205,7 +205,7 @@ echo "VITE_API_URL=https://careerbuddyai-backend-kartik.onrender.com" > .env
 npm run dev
 ```
 
-Frontend will be live at `http://localhost:5173`
+Frontend will be live at `https://career-buddy-ai-kappa.vercel.app`
 
 ---
 
