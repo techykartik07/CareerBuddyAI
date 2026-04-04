@@ -18,11 +18,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "https://careerbuddyai-backend-kartik.onrender.com",
-        "https://career-buddy-ai-kappa.vercel.app",
-    ],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -153,4 +149,4 @@ def health():
     return {"status": "ok", "service": "CareerBuddy AI Backend"}
 
 app.include_router(resume_router)
-app.include_router(ai_router)
+app.include_router(ai_router)
