@@ -1,41 +1,37 @@
-
-# Environment files
-.env
-*.env
-
 # Python
 __pycache__/
 *.pyc
-venv/
-.venv/
+*.pyo
 *.egg-info/
-# Environment variables — NEVER commit these
-.env
-.env.*
-!.env.example
-
-# Python virtual environment
-backend/.venv/
-.venv/
 venv/
+.venv/
 env/
 
-# Python cache
-__pycache__/
-*.py[cod]
-*.pyo
+# Environment variables — NEVER commit
+.env
+.env.*
+.env.local
+.env.production
+!.env.example
 
-# Hugging Face model cache
+# Node
+node_modules/
+dist/
+
+# Models and large files
+*.pkl
+*.pt
+*.bin
+backend/models/
+backend/data/
+
+# Hugging Face cache
 .cache/
 
-# OS files
+# OS
 .DS_Store
 Thumbs.db
 
 # IDE
 .vscode/
 .idea/
-
-# Backend Data and Models
-backend/data/
-backend/models/
