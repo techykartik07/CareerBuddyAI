@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from dotenv import load_dotenv
+from routers import ai, resume
 
 load_dotenv()
 app = FastAPI(title="CareerBuddy AI", version="1.0")
