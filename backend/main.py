@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import ai, resume
+from backend.routers import ai, resume
 # from dotenv import load_dotenv
 
 # load_dotenv()  # reads .env file
