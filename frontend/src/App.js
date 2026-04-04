@@ -2,7 +2,7 @@ import { useEffect } from "react";
 
 function App() {
   useEffect(() => {
-    fetch("https://careerbuddyai-6.onrender.com")
+    fetch("https://careerbuddyai-backend-kartik.onrender.com")
       .then(res => res.json())
       .then(data => console.log(data));
   }, []);
