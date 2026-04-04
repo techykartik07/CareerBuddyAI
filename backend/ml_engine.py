@@ -6,8 +6,20 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+<<<<<<< HEAD
 _groq_key = os.getenv("GROQ_API_KEY")
 client = Groq(api_key=_groq_key) if _groq_key else None
+=======
+_model = None
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+>>>>>>> ff7001643c2aa5173e5264c71a91bc2b1dd73df5
+
+def _load_model():
+    global _model
+    if _model is None:
+        from sentence_transformers import SentenceTransformer
+        _model = SentenceTransformer('all-MiniLM-L6-v2')
+    return _model
 
 # ── SKILL VOCABULARY ──────────────────────────────────────
 TECH_SKILLS = [
@@ -64,10 +76,10 @@ def calculate_job_match(resume_text: str, jd_text: str) -> dict:
         if not resume_text.strip() or not jd_text.strip():
             return {"match_percentage": 0.0, "verdict": "Insufficient text"}
 
-        vectorizer = TfidfVectorizer(stop_words="english")
-        tfidf_matrix = vectorizer.fit_transform([resume_text, jd_text])
-        similarity = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]
-        match_pct = round(float(similarity) * 100, 1)
+        model = _load_model()
+        embeddings  = model.encode([resume_text, jd_text])
+        similarity  = cosine_similarity([embeddings[0]], [embeddings[1]])[0][0]
+        match_pct   = round(float(similarity) * 100, 1)
 
         if match_pct >= 75:
             verdict = "Strong match"

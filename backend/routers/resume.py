@@ -14,15 +14,27 @@ from parsers.pdf_parser import extract_text_from_pdf
 from parsers.contact_parser import extract_contact_info
 from skills_list import extract_skills, extract_sections, TECH_SKILLS
 
+_nlp = None
+
+def _load_nlp():
+    global _nlp
+    if _nlp is None:
+        try:
+            _nlp = spacy.load("en_core_web_sm")
+        except OSError:
+            raise RuntimeError(
+                "spaCy model 'en_core_web_sm' not found. "
+                "Ensure it's in requirements.txt (as a URL or pip package)."
+            )
+    return _nlp
+
 router = APIRouter(prefix="/resume", tags=["Resume"])
 
-
 def extract_orgs(text: str) -> list[str]:
-    """Extract organisation-like words using simple regex (no spaCy needed)."""
-    import re
-    # Match capitalised multi-word phrases (rough org name detector)
-    matches = re.findall(r'\b[A-Z][a-zA-Z]+(?:\s[A-Z][a-zA-Z]+)+\b', text[:5000])
-    return list(set(matches))[:20]
+    """Use spaCy NER to extract organisation names."""
+    nlp = _load_nlp()
+    doc = nlp(text[:5000])  # cap to avoid slow processing
+    return list({ent.text for ent in doc.ents if ent.label_ == "ORG"})
 
 
 @router.get("/health")
