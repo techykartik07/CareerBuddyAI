@@ -34,7 +34,7 @@ SKILL_ALIASES = {
 def _keyword_in_text(keyword: str, text_lower: str) -> bool:
     """Whole-word / whole-phrase match using regex word boundaries.
     Prevents 'data' matching inside 'data structures'."""
-    pattern = r'(?<![\\w-])' + _re.escape(keyword) + r'(?![\\w-])'
+    pattern = r'(?<![\w-])' + _re.escape(keyword) + r'(?![\w-])'
     return bool(_re.search(pattern, text_lower))
 
 def _extract_jd_keywords_via_groq(jd_text: str) -> list:
@@ -149,7 +149,8 @@ def get_skill_gap(resume_skills: list, jd_skills: list) -> dict:
             "present_skills": present,
             "missing_skills": missing,
             "bonus_skills":   bonus,
-            "gap_count":      len(missing)
+            "gap_count":      len(missing),
+            "total_jd_skills": len(jd_norm),
         }
     except Exception as e:
         return {"present_skills": [], "missing_skills": [],

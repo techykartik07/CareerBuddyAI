@@ -123,7 +123,7 @@ async def full_analyze(
 ):
     """Full pipeline: PDF -> parse -> ML scoring -> return all results"""
     from ml_engine import (calculate_ats_score, calculate_job_match,
-                           get_skill_gap, generate_roadmap)
+                           get_skill_gap, generate_roadmap, predict_job_role)
     try:
         file_bytes = await file.read()
         if len(file_bytes) == 0:
@@ -141,13 +141,22 @@ async def full_analyze(
         gap   = get_skill_gap(resume_skills, jd_skills)
         road  = generate_roadmap(text, jd_text, gap["missing_skills"])
 
+        # Role prediction (graceful — won't break if model isn't trained)
+        try:
+            role = predict_job_role(text)
+        except Exception:
+            role = None
+
         return {
-            "contact":       contact,
-            "resume_skills": resume_skills,
-            "ats":           ats,
-            "match":         match,
-            "skill_gap":     gap,
-            "roadmap":       road,
+            "text":            text,
+            "word_count":      len(text.split()),
+            "contact":         contact,
+            "resume_skills":   resume_skills,
+            "ats":             ats,
+            "match":           match,
+            "skill_gap":       gap,
+            "roadmap":         road,
+            "role_prediction": role,
         }
     except HTTPException:
         raise
