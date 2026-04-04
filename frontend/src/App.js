@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import "./App.css";
 
-const API = "http://localhost:8000";
+const API = process.env.REACT_APP_API_URL || "https://careerbuddyai-wof2.onrender.com";
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 function scoreColor(n) {
@@ -554,8 +554,8 @@ export default function App() {
 
       <footer className="footer">
         CareerBuddy AI &nbsp;·&nbsp; Backend at{" "}
-        <a href="http://localhost:8000/docs" target="_blank" rel="noreferrer">
-          localhost:8000/docs
+        <a href="https://careerbuddyai-wof2.onrender.com/docs" target="_blank" rel="noreferrer">
+          careerbuddyai-wof2.onrender.com/docs
         </a>
       </footer>
     </div>
