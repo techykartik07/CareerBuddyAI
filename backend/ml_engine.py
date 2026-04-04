@@ -1,7 +1,6 @@
 from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.feature_extraction.text import TfidfVectorizer
 from groq import Groq
-import os, numpy as np, pickle
+import os, re as _re, json as _json, numpy as np, pickle
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -30,6 +29,55 @@ SKILL_ALIASES = {
     "dl":"deep learning","k8s":"kubernetes","tf":"tensorflow",
 }
 
+# ── HELPERS ───────────────────────────────────────────────
+def _keyword_in_text(keyword: str, text_lower: str) -> bool:
+    """Whole-word / whole-phrase match using regex word boundaries.
+    Prevents 'data' matching inside 'data structures'."""
+    pattern = r'(?<![\\w-])' + _re.escape(keyword) + r'(?![\\w-])'
+    return bool(_re.search(pattern, text_lower))
+
+def _extract_jd_keywords_via_groq(jd_text: str) -> list:
+    """Use Groq LLM to extract only real, meaningful keywords from the JD."""
+    try:
+        response = client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a technical recruiter expert. "
+                        "Extract ONLY the specific, concrete skills, tools, technologies, "
+                        "frameworks, programming languages, certifications, and domain knowledge "
+                        "that a candidate MUST or SHOULD have based on the job description. "
+                        "Rules:\n"
+                        "- Return ONLY a JSON array of strings, nothing else.\n"
+                        "- Each item must be a real skill/tool/technology "
+                        "  (e.g. 'python', 'docker', 'rest api', 'data science').\n"
+                        "- Do NOT include soft skills like 'communication', 'teamwork', 'ability to work'.\n"
+                        "- Do NOT include generic phrases like 'work independently', 'fast learner'.\n"
+                        "- Do NOT include company names, locations, or benefits.\n"
+                        "- Normalise to lowercase. Max 25 items.\n"
+                        'Example output: ["python", "docker", "rest api", "data science", "postgresql"]'
+                    )
+                },
+                {
+                    "role": "user",
+                    "content": f"Extract skills from this job description:\n\n{jd_text[:3000]}"
+                }
+            ],
+            max_tokens=300,
+            temperature=0.1,
+        )
+        raw = response.choices[0].message.content.strip()
+        # Strip markdown code fences if the model wraps output in them
+        raw = _re.sub(r'^```[\w]*\n?', '', raw).strip('`').strip()
+        keywords = _json.loads(raw)
+        if isinstance(keywords, list):
+            return [str(k).lower().strip() for k in keywords if k and isinstance(k, str)]
+        return []
+    except Exception:
+        return []
+
 # ── 1. ATS SCORE ──────────────────────────────────────────
 def calculate_ats_score(resume_text: str, jd_text: str) -> dict:
     try:
@@ -37,21 +85,23 @@ def calculate_ats_score(resume_text: str, jd_text: str) -> dict:
             return {"ats_score": 0, "matched_keywords": [],
                     "missing_keywords": [], "total_keywords_checked": 0}
 
-        vectorizer = TfidfVectorizer(
-            stop_words="english", max_features=30, ngram_range=(1,2)
-        )
-        vectorizer.fit([jd_text])
-        jd_keywords = vectorizer.get_feature_names_out().tolist()
+        # Use Groq to extract only real, relevant JD keywords
+        jd_keywords = _extract_jd_keywords_via_groq(jd_text)
+
+        # Fallback: if Groq fails or returns nothing, match against known TECH_SKILLS
+        if not jd_keywords:
+            jd_lower = jd_text.lower()
+            jd_keywords = [s for s in TECH_SKILLS if _keyword_in_text(s, jd_lower)]
 
         resume_lower = resume_text.lower()
-        matched = [k for k in jd_keywords if k in resume_lower]
-        missing = [k for k in jd_keywords if k not in resume_lower]
+        matched = [k for k in jd_keywords if _keyword_in_text(k, resume_lower)]
+        missing = [k for k in jd_keywords if not _keyword_in_text(k, resume_lower)]
         ats_score = int(len(matched) / len(jd_keywords) * 100) if jd_keywords else 0
 
         return {
             "ats_score":              ats_score,
             "matched_keywords":       matched,
-            "missing_keywords":       missing[:10],
+            "missing_keywords":       missing[:15],
             "total_keywords_checked": len(jd_keywords)
         }
     except Exception as e:
