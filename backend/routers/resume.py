@@ -15,23 +15,25 @@ from parsers.contact_parser import extract_contact_info
 from skills_list import extract_skills, extract_sections, TECH_SKILLS
 import spacy
 
+_nlp = None
+
+def _load_nlp():
+    global _nlp
+    if _nlp is None:
+        try:
+            _nlp = spacy.load("en_core_web_sm")
+        except OSError:
+            raise RuntimeError(
+                "spaCy model 'en_core_web_sm' not found. "
+                "Ensure it's in requirements.txt (as a URL or pip package)."
+            )
+    return _nlp
+
 router = APIRouter(prefix="/resume", tags=["Resume"])
-
-# Load spaCy model once at startup
-try:
-    nlp = spacy.load("en_core_web_sm")
-except OSError:
-    raise RuntimeError(
-        "spaCy model 'en_core_web_sm' not found. "
-        "Run: python -m spacy download en_core_web_sm"
-    )
-
-
-
-
 
 def extract_orgs(text: str) -> list[str]:
     """Use spaCy NER to extract organisation names."""
+    nlp = _load_nlp()
     doc = nlp(text[:5000])  # cap to avoid slow processing
     return list({ent.text for ent in doc.ents if ent.label_ == "ORG"})
 

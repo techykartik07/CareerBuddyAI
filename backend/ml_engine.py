@@ -1,4 +1,3 @@
-from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 from groq import Groq
@@ -7,8 +6,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-model  = SentenceTransformer('all-MiniLM-L6-v2')
+_model = None
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
+def _load_model():
+    global _model
+    if _model is None:
+        from sentence_transformers import SentenceTransformer
+        _model = SentenceTransformer('all-MiniLM-L6-v2')
+    return _model
 
 # ── SKILL VOCABULARY ──────────────────────────────────────
 TECH_SKILLS = [
@@ -65,6 +71,7 @@ def calculate_job_match(resume_text: str, jd_text: str) -> dict:
         if not resume_text.strip() or not jd_text.strip():
             return {"match_percentage": 0.0, "verdict": "Insufficient text"}
 
+        model = _load_model()
         embeddings  = model.encode([resume_text, jd_text])
         similarity  = cosine_similarity([embeddings[0]], [embeddings[1]])[0][0]
         match_pct   = round(float(similarity) * 100, 1)
