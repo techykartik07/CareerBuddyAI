@@ -1,10 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from routers import ai, resume
 # from dotenv import load_dotenv
 
 # load_dotenv()  # reads .env file
 app = FastAPI(title="CareerBuddy AI", version="1.0")
 
+app.include_router(ai.router)
+app.include_router(resume.router)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],      # tighten this before production
