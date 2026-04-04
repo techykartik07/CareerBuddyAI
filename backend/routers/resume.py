@@ -8,13 +8,14 @@ Routes:
   GET  /resume/health    → health check
 """
 
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+from pydantic import BaseModel
 from parsers.pdf_parser import extract_text_from_pdf
 from parsers.contact_parser import extract_contact_info
-from skills_list import SKILLS
+from skills_list import extract_skills, extract_sections, TECH_SKILLS
 import spacy
 
-router = APIRouter()
+router = APIRouter(prefix="/resume", tags=["Resume"])
 
 # Load spaCy model once at startup
 try:
@@ -26,10 +27,7 @@ except OSError:
     )
 
 
-def extract_skills(text: str) -> list[str]:
-    """Match skill keywords from SKILLS vocabulary against resume text."""
-    text_lower = text.lower()
-    return [skill for skill in SKILLS if skill.lower() in text_lower]
+
 
 
 def extract_orgs(text: str) -> list[str]:
@@ -45,35 +43,38 @@ def health_check():
 
 
 @router.post("/parse")
-async def parse_resume(file: UploadFile = File(...), jd_text: str = ""):
-    """
-    Parse a resume PDF and return structured data.
-
-    - **file**: PDF resume to upload
-    - **jd_text**: (optional) job description text for future matching
-
-    TODO (Phase 2): replace stub values with real NLP extraction.
-    """
+async def parse_resume(
+    file: UploadFile = File(...),
+    jd_text: str = Form(default="")
+):
     if not file.filename.endswith(".pdf"):
-        raise HTTPException(status_code=400, detail="Only PDF files are accepted.")
-
-    file_bytes = await file.read()
+        raise HTTPException(status_code=400, detail="Only PDF files accepted")
+        
     try:
-        text = extract_text_from_pdf(file_bytes)
+        file_bytes = await file.read()
+        if len(file_bytes) == 0:
+            raise HTTPException(400, "Empty file uploaded")
+        if len(file_bytes) > 5 * 1024 * 1024:    # 5 MB limit
+            raise HTTPException(413, "File too large. Max 5MB.")
+        text       = extract_text_from_pdf(file_bytes)
+        contact    = extract_contact_info(text)
+        skills     = extract_skills(text)
+        sections   = extract_sections(text)
+        return {
+            "text":       text,
+            "contact":    contact,
+            "skills":     skills,
+            "education":  sections["education"],
+            "experience": sections["experience"],
+            "projects":   sections["projects"],
+            "word_count": len(text.split()),
+        }
+    except HTTPException:
+        raise
     except ValueError as e:
-        # Handle scanned/image PDFs gracefully
-        return {"error": "Please upload a text-based PDF", "detail": str(e)}
-
-    contact = extract_contact_info(text)
-    skills = extract_skills(text)
-
-    return {
-        "text": text[:3000],
-        "contact": contact,
-        "skills": skills,
-        "education": [],    # TODO Phase 2: NLP-based education extraction
-        "experience": [],   # TODO Phase 2: NLP-based experience extraction
-    }
+        raise HTTPException(status_code=422, detail=f"PDF parsing failed: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 
 @router.post("/upload")
@@ -82,29 +83,108 @@ async def upload_resume(file: UploadFile = File(...)):
     if not file.filename.endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are accepted.")
 
-    file_bytes = await file.read()
     try:
+        file_bytes = await file.read()
+        if len(file_bytes) == 0:
+            raise HTTPException(400, "Empty file uploaded")
+        if len(file_bytes) > 5 * 1024 * 1024:    # 5 MB limit
+            raise HTTPException(413, "File too large. Max 5MB.")
         text = extract_text_from_pdf(file_bytes)
+        contact = extract_contact_info(text)
+        skills = extract_skills(text)
+        orgs = extract_orgs(text)
+
+        return {
+            "filename": file.filename,
+            "contact": contact,
+            "skills_matched": skills,
+            "organisations": orgs,
+            "raw_text_preview": text[:500],
+        }
+    except HTTPException:
+        raise
     except ValueError as e:
         raise HTTPException(
             status_code=422,
-            detail="Please upload a text-based PDF",
+            detail=f"PDF parsing failed: {str(e)}",
         )
-
-    contact = extract_contact_info(text)
-    skills = extract_skills(text)
-    orgs = extract_orgs(text)
-
-    return {
-        "filename": file.filename,
-        "contact": contact,
-        "skills_matched": skills,
-        "organisations": orgs,
-        "raw_text_preview": text[:500],
-    }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 
 @router.get("/skills")
 def get_skills():
     """Return the full hardcoded skill vocabulary."""
-    return {"total": len(SKILLS), "skills": SKILLS}
+    return {"total": len(TECH_SKILLS), "skills": TECH_SKILLS}
+
+@router.post("/analyze")
+async def full_analyze(
+    file: UploadFile = File(...),
+    jd_text: str = Form(default="")
+):
+    """Full pipeline: PDF -> parse -> ML scoring -> return all results"""
+    from ml_engine import (calculate_ats_score, calculate_job_match,
+                           get_skill_gap, generate_roadmap)
+
+    try:
+        # Step 1: Parse PDF
+        file_bytes = await file.read()
+        if len(file_bytes) == 0:
+            raise HTTPException(400, "Empty file uploaded")
+        if len(file_bytes) > 5 * 1024 * 1024:    # 5 MB limit
+            raise HTTPException(413, "File too large. Max 5MB.")
+            
+        text       = extract_text_from_pdf(file_bytes)
+        contact    = extract_contact_info(text)
+        resume_skills = extract_skills(text)
+
+        # Step 2: Extract JD skills (simple keyword match from JD text)
+        jd_skills  = extract_skills(jd_text) if jd_text else []
+
+        # Step 3: Run ML scoring
+        ats   = calculate_ats_score(text, jd_text)
+        match = calculate_job_match(text, jd_text)
+        gap   = get_skill_gap(resume_skills, jd_skills)
+        road  = generate_roadmap(text, jd_text, gap["missing_skills"])
+
+        return {
+            "contact":       contact,
+            "resume_skills": resume_skills,
+            "ats":           ats,
+            "match":         match,
+            "skill_gap":     gap,
+            "roadmap":       road,
+        }
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(422, f"PDF parsing failed: {str(e)}")
+    except Exception as e:
+        raise HTTPException(500, f"Unexpected error: {str(e)}")
+
+class JDRequest(BaseModel):
+    jd_text: str
+
+@router.post("/jd-skills")
+def extract_jd_skills(req: JDRequest):
+    skills = extract_skills(req.jd_text)
+    # Also extract skills not in our list using simple noun phrases
+    import re
+    extra = re.findall(r'\b[A-Z][a-z]+(?:\s[A-Z][a-z]+)*\b', req.jd_text)
+    return {
+        "jd_skills": skills,
+        "raw_requirements": extra[:15]
+    }
+
+SAMPLE_RESULT = {
+    "contact": {"name": "Demo Candidate", "email": "demo@example.com"},
+    "resume_skills": ["python", "machine learning", "git", "numpy"],
+    "ats": {"ats_score": 45, "matched_keywords": ["python"], "missing_keywords": ["fastapi", "docker", "tensorflow"]},
+    "match": {"match_percentage": 52.3, "verdict": "Moderate match - improve resume"},
+    "skill_gap": {"missing_skills": ["fastapi", "docker", "tensorflow"], "present_skills": ["python", "machine learning"]},
+    "roadmap": "Week 1: Learn FastAPI basics...\nWeek 2: Docker fundamentals..."
+}
+
+@router.get("/sample")
+def get_sample():
+    return SAMPLE_RESULT

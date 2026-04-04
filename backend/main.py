@@ -22,9 +22,8 @@ def health_check():
     """Global health check for the backend."""
     return {"status": "ok", "service": "CareerBuddy AI Backend"}
 
-# Routers
-from routers import resume
-from routers.ai import router as ai_router
+from routers.resume import router as resume_router
+from routers.ai     import router as ai_router
 
-app.include_router(resume.router, prefix="/resume", tags=["Resume"])
+app.include_router(resume_router)
 app.include_router(ai_router)
