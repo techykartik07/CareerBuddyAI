@@ -10,9 +10,10 @@
 __pycache__/
 *.pyc
 venv/
-<<<<<<< HEAD
+.venv/
 .env
-*.egg-info/
+node_modules/
+*.pkl
 
 # Node
 node_modules/
