@@ -11,6 +11,8 @@ TECH_SKILLS = [
     "power bi", "tableau", "excel", "spark", "hadoop",
     # Web / Backend
     "fastapi", "django", "flask", "node.js", "react", "vue", "angular",
+    "data scientist", "software engineer", "frontend developer", "backend developer",
+    "fullstack developer", "data engineer", "machine learning engineer",
     "rest api", "graphql", "docker", "kubernetes", "aws", "azure", "gcp",
     # Tools
     "git", "github", "linux", "bash", "postman", "jira", "agile",

@@ -19,6 +19,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        "http://localhost:5173",
         "https://careerbuddyai-backend-kartik.onrender.com",
         "https://career-buddy-ai-kappa.vercel.app",
     ],

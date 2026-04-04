@@ -55,13 +55,13 @@ What would you like to know?`,
     setChatLoading(true);
  
     try {
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
       
       const response = await axios.post(`${API_URL}/ai/chat`, {
         message: chatInput,
         context: {
-          ats_score: data.ats.score,
-          job_match: data.job_match.percentage,
+          ats_score: data.ats?.ats_score,
+          job_match: data.match?.match_percentage,
           skill_gaps: data.skill_gap,
           roadmap: data.roadmap
         }
@@ -69,7 +69,7 @@ What would you like to know?`,
  
       const aiMessage = {
         role: 'assistant',
-        content: response.data.response,
+        content: response.data.reply,
         timestamp: new Date().toISOString()
       };
  
@@ -137,7 +137,7 @@ What would you like to know?`,
     };
   };
  
-  const verdict = getVerdictConfig(data.ats.score);
+  const verdict = getVerdictConfig(data.ats?.ats_score || 0);
  
   // Parse roadmap into structured weeks
   const parseRoadmap = (roadmapText) => {
@@ -202,18 +202,18 @@ What would you like to know?`,
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <div className={`text-7xl font-black bg-gradient-to-r ${getScoreColor(data.ats.score)} bg-clip-text text-transparent mb-3`}>
-              {data.ats.score}%
+            <div className={`text-7xl font-black bg-gradient-to-r ${getScoreColor(data.ats?.ats_score || 0)} bg-clip-text text-transparent mb-3`}>
+              {data.ats?.ats_score || 0}%
             </div>
             <div className="h-3 bg-gray-700 rounded-full overflow-hidden">
               <div 
-                className={`h-full bg-gradient-to-r ${getScoreColor(data.ats.score)} transition-all duration-1000`}
-                style={{ width: `${data.ats.score}%` }}
+                className={`h-full bg-gradient-to-r ${getScoreColor(data.ats?.ats_score || 0)} transition-all duration-1000`}
+                style={{ width: `${data.ats?.ats_score || 0}%` }}
               ></div>
             </div>
             <p className="text-gray-400 mt-3 text-sm">
-              {data.ats.score >= 75 ? 'Excellent - Your resume will pass most ATS filters' : 
-               data.ats.score >= 50 ? 'Moderate - Some improvements needed' : 
+              {(data.ats?.ats_score || 0) >= 75 ? 'Excellent - Your resume will pass most ATS filters' : 
+               (data.ats?.ats_score || 0) >= 50 ? 'Moderate - Some improvements needed' : 
                'Low - Significant optimization required'}
             </p>
           </div>
@@ -226,18 +226,18 @@ What would you like to know?`,
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
             </div>
-            <div className={`text-7xl font-black bg-gradient-to-r ${getScoreColor(data.job_match.percentage)} bg-clip-text text-transparent mb-3`}>
-              {data.job_match.percentage}%
+            <div className={`text-7xl font-black bg-gradient-to-r ${getScoreColor(data.match?.match_percentage || 0)} bg-clip-text text-transparent mb-3`}>
+              {data.match?.match_percentage || 0}%
             </div>
             <div className="h-3 bg-gray-700 rounded-full overflow-hidden">
               <div 
-                className={`h-full bg-gradient-to-r ${getScoreColor(data.job_match.percentage)} transition-all duration-1000`}
-                style={{ width: `${data.job_match.percentage}%` }}
+                className={`h-full bg-gradient-to-r ${getScoreColor(data.match?.match_percentage || 0)} transition-all duration-1000`}
+                style={{ width: `${data.match?.match_percentage || 0}%` }}
               ></div>
             </div>
             <p className="text-gray-400 mt-3 text-sm">
-              {data.job_match.percentage >= 75 ? 'Strong fit for this position' : 
-               data.job_match.percentage >= 50 ? 'Moderate fit with some gaps' : 
+              {(data.match?.match_percentage || 0) >= 75 ? 'Strong fit for this position' : 
+               (data.match?.match_percentage || 0) >= 50 ? 'Moderate fit with some gaps' : 
                'Significant skill development needed'}
             </p>
           </div>
@@ -277,27 +277,21 @@ What would you like to know?`,
             <h2 className="text-2xl font-bold text-white">Critical Skill Gaps</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {data.skill_gap.map((item, idx) => (
+            {(data.skill_gap?.missing_skills || []).map((skill, idx) => (
               <div 
                 key={idx} 
                 className="bg-gray-900/50 border border-gray-700 rounded-xl p-5 hover:border-purple-500/50 transition-all group"
               >
                 <div className="flex items-start gap-3 mb-2">
-                  <span className={`px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider ${
-                    item.priority === 'High' 
-                      ? 'bg-red-500/20 text-red-300 border border-red-500/40' 
-                      : item.priority === 'Medium' 
-                      ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/40' 
-                      : 'bg-blue-500/20 text-blue-300 border border-blue-500/40'
-                  }`}>
-                    {item.priority}
+                  <span className="px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider bg-red-500/20 text-red-300 border border-red-500/40">
+                    High
                   </span>
                   <h3 className="font-bold text-white text-lg flex-1 group-hover:text-purple-300 transition-colors">
-                    {item.skill}
+                    {skill}
                   </h3>
                 </div>
                 <p className="text-gray-400 text-sm leading-relaxed ml-0">
-                  {item.reason}
+                  This skill was identified as missing based on the job requirements.
                 </p>
               </div>
             ))}

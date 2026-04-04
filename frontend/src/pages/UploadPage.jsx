@@ -41,8 +41,8 @@ export default function UploadPage() {
 
     try {
       const formData = new FormData();
-      formData.append('resume', file);
-      formData.append('job_description', jobDescription);
+      formData.append('file', file);
+      formData.append('jd_text', jobDescription);
 
       const API_URL = import.meta.env.VITE_API_URL || 'BASE_URL';
       
@@ -249,7 +249,7 @@ We're looking for a Senior Software Engineer with 5+ years of experience in Reac
 
         {/* Footer */}
         <p className="text-center text-purple-400 mt-8 text-sm">
-          Powered by Claude AI • QUANT 4 • Hacksagon 2026
+          QUANT 4 • Hacksagon 2026
         </p>
       </div>
     </div>
